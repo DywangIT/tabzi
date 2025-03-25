@@ -1,0 +1,9 @@
+{
+    "scripts": {
+        "minify": "terser src/tabzi.js -o tabzi.min.js && csso src/tabzi.css -o tabzi.min.css"
+    },
+    "dependencies": {
+        "csso-cli": "^4.0.2",
+        "terser": "^5.39.0"
+    }
+}
