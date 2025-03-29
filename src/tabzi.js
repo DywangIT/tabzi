@@ -7,51 +7,84 @@ function Tabzi(selector, options = {}) {
         },
         options
     );
-    // Get components
     this._tabBar = document.querySelector(selector);
     if (!this._tabBar) {
-        console.error(`Tabzi: No container found for selector '${selector}'`);
+        console.error(`Tabzi: No container found for seclector '${selector}'`);
         return;
     }
     this._origionalHTML = this._tabBar.innerHTML;
 
-    this._tabs = Array.from(this._tabBar.querySelectorAll("li a"));
-    if (!this._tabs) {
-        console.error("Tabzi: No tabs found inside the container");
+    this._tabList = Array.from(this._tabBar.querySelectorAll("li a"));
+    if (!this._tabList) {
+        console.error(`Tabzi: No tabList found inside the tabBar`);
         return;
     }
+
     this._panels = this._getPenels();
-    if (this._panels.length !== this._tabs.length) return;
-    // Param key
-    this._paramKey = selector.replace(/[^a-zA-Z0-9]/g, "");
-    // Active tab in history
+    if (this._panels.length != this._tabList.length) return;
+    // Activate tab in history
     const params = new URLSearchParams(location.search);
-    const selectedTab = params.get(this._paramKey);
+    this._paramKey = selector.replace(/[^a-zA-Z0-9]/g, "");
+    const paramValue = params.get(this._paramKey);
     const defaltTab =
         (this.opt.remember &&
-            selectedTab &&
-            this._tabs.find(
+            paramValue &&
+            this._tabList.find(
                 (tab) =>
                     tab.getAttribute("href").replace(/[^a-zA-Z0-9]/g, "") ===
-                    selectedTab
+                    paramValue
             )) ||
-        this._tabs[0];
+        this._tabList[0];
+
     this._activateTab(defaltTab, false, false);
-    // Add event
-    this._tabs.forEach((tab) => {
+
+    this.currentTab = defaltTab;
+
+    this._tabList.forEach((tab) => {
         tab.onclick = (event) => {
             event.preventDefault();
-
-            if (this._currentTab !== tab) {
+            if (this.currentTab !== tab) {
+                this.currentTab = tab;
                 this._activateTab(tab);
-                this._currentTab = tab;
             }
         };
     });
 }
-// Get panels
+
+Tabzi.prototype._activateTab = function (
+    selectedTab,
+    triggerOnChange = true,
+    updateURL = this.opt.remember
+) {
+    this._tabList.forEach((tab) =>
+        tab.closest("li").classList.remove(this.opt.activeClassName)
+    );
+    selectedTab.closest("li").classList.add(this.opt.activeClassName);
+    this._panels.forEach((panel) => (panel.hidden = true));
+    const activePanel = document.querySelector(
+        selectedTab.getAttribute("href")
+    );
+    activePanel.hidden = false;
+
+    if (updateURL) {
+        const params = new URLSearchParams(location.search);
+        const paramValue = selectedTab
+            .getAttribute("href")
+            .replace(/[^a-zA-Z0-9]/g, "");
+        params.set(this._paramKey, paramValue);
+        history.replaceState(null, null, `?${params}`);
+    }
+
+    if ((typeof this.opt.onChange === "function") & triggerOnChange) {
+        this.opt.onChange({
+            selectedTab,
+            panel: activePanel
+        });
+    }
+};
+
 Tabzi.prototype._getPenels = function () {
-    return this._tabs
+    return this._tabList
         .map((tab) => {
             const panel = document.querySelector(tab.getAttribute("href"));
             if (!panel) {
@@ -65,39 +98,11 @@ Tabzi.prototype._getPenels = function () {
         })
         .filter(Boolean);
 };
-// Activate Tab
-Tabzi.prototype._activateTab = function (
-    tab,
-    triggerOnChange = true,
-    updateURL = this.opt.remember
-) {
-    if (updateURL) {
-        const params = new URLSearchParams(location.search);
-        const paramKey = tab.getAttribute("href").replace(/[^a-zA-Z0-9]/g, "");
-        params.set(this._paramKey, paramKey);
-        history.replaceState(null, null, `?${params}`);
-    }
 
-    this._tabs.forEach((tab) =>
-        tab.closest("li").classList.remove(this.opt.activeClassName)
-    );
-    tab.closest("li").classList.add(this.opt.activeClassName);
-    this._panels.forEach((panel) => (panel.hidden = true));
-    const activePanel = document.querySelector(tab.getAttribute("href"));
-    activePanel.hidden = false;
-
-    if (typeof this.opt.onChange === "function" && triggerOnChange) {
-        this.opt.onChange({
-            tab,
-            panel: activePanel
-        });
-    }
-};
-// Clean up to optimize
 Tabzi.prototype.destroy = function () {
     this._tabBar.innerHTML = this._origionalHTML;
     this._panels.forEach((panel) => (panel.hidden = false));
     this._tabBar = null;
-    this._tabs = null;
+    this._tabList = null;
     this._panels = null;
 };

@@ -15,7 +15,7 @@
         />
         <link rel="stylesheet" href="./assets/styles.css" media="all" />
         <link rel="stylesheet" href="./src/tabzi.css" />
-        <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="./assets/favicon.png" type="image/x-icon">
     </head>
     <body>
         <!-- HEADER -->
@@ -321,7 +321,7 @@ tabs.destroy();
             function updateActiveLine() {
                 const activeTab = tabs3.currentTab;
                 const tabLi = activeTab.closest("li");
-                const activeLine = tabs3.container.nextElementSibling;
+                const activeLine = tabs3._tabBar.nextElementSibling;
 
                 activeLine.style.width = `${tabLi.offsetWidth}px`;
                 activeLine.style.transform = `translateX(${tabLi.offsetLeft}px)`;
